@@ -1,0 +1,140 @@
+
+library(caret)
+library(neuralnet)
+library(pROC)
+
+
+df <- data.frame(
+  molecular_weight = c(144.21, 151.16, 365.4, 380.4, 307.4, 225.20, 585.6, 194.19, 180.16, 349.4, 461.5, 511.6, 427.5, 349.4, 415.5, 525.6, 383.4, 554.6, 284.74, 314.72, 321.2, 325.8, 281.27, 286.71, 308.8, 319.9, 357.8, 272.37, 211.21, 232.23, 252.27, 285.34, 238.28, 254.35, 220.31, 164.96, 237.72, 178.27, 44.013, 267.24, 224.21, 229.26, 236.23, 266.30, 211.22, 336.4, 266.34, 230.09, 371.4, 234.34, 246.35, 484.50, 285.4, 283.79, 236.27, 218.25, 297.7, 780.9, 225.28, 289.4, 188.23, 138.06, 352.8, 398.4, 356.2, 226.27, 184.49, 262.30, 147.00, 336.5, 46.07, 162.23, 248.7, 242.34, 353.5, 378.31, 315.67, 258.23, 424.5, 563.7, 405.5, 498.6, 453.52, 416.51, 217.29, 376.4, 326.4, 300.4, 336.3, 353.3, 308.3, 404.5, 411.5, 418.6, 558.6, 459.5, 75.07, 372.5, 268.3, 114.17, 300.4, 288.4, 328.5, 302.5, 274.4, 444.4, 460.4, 435.5, 422.9, 392.5, 188.65, 188.65, 188.65, 387.9, 343.2, 149.21, 143.14, 581.6, 286.33, 416.5, 467.64, 270.75, 199.16, 360.4, 296.1, 160.18, 299.79, 309.4, 327.4, 376.4, 254.28, 356.41, 340.4, 253.26, 154.12, 244.31, 379.5, 131.17, 317.4, 303.35, 287.36, 169.18, 147.00, 360.4, 292.0, 350.6, 304.35, 414.34, 137.14, 267.36, 276.42, 171.15, 161.20, 315.71, 235.33, 413.5, 425.0, 346.3, 376.45, 167.1, 204.31, 265.35, 389.3, 620.5, 252.34, 994.2, 513.7, 129.16, 645.7, 247.14, 255.23, 384.4, 416.4, 539.6, 414.5, 339.33, 349.4, 299.75, 508.9, 602.6, 323.13, 1749.8, 1449.2, 543.5, 236.31, 180.16, 378.5, 330.74, 609.73, 314.5, 344.4, 424.5, 505.6, 720.9, 670.8, 613.8, 1243.5, 290.40, 652.8, 557.8, 169.18, 733.9, 749.0, 837.0, 303.35, 420.5, 239.31, 494.0, 398.3, 383.5, 410.4, 386.6, 748.0, 584.7, 297.4, 383.4, 338.8, 776.87, 650.97, 396.4, 424.39, 392.5, 261.08, 288.4, 274.4, 628.8, 547.7, 645.3, 666.9, 314.25, 420.43, 344.4, 247.25, 287.21, 366.4, 435.3, 602.7, 444.4, 1202.6, 414.5, 315.4, 314.9, 310.4), 
+  logP = c(2.800, 0.500, -2.000, 1.200, 2.800, -1.9, -3.2, -0.100, 0.000, -1.100, 0.100, 0.000, 0.000, 0.400, 1.900, -2.400, 0.000, -1.300, 3.000, 3.300, 2.400, 2.73, 2.200, 2.200, 3.100, 4.600, 4.300, 0.200, -1.9, 1.47, 2.500, 0.800, 2.000, 3.200, 2.100, 2.200, 2.200, 3.800, 0.5, 0.000, -0.800, -0.900, -1.200, 2.0, -1.300, 1.700, 0.200, 1.600, 4.300, 2.300, 1.900, -6.3, 4.64, 2.720, 2.77, 0.900, -0.100, 1.300, 0.900, 1.800, 0.400, -1.4, 2.200, -0.700, -0.300, 2.100, 2.100, 2.300, 3.400, 4.000, -0.100, 1.200, 2.700, 2.900, 4.300, 3.6, 4.0, 0.300, 1.3, 6.2, -2.900, 1.2, 1.2, 1.400, 0.300, -0.100, 6.1, 5.66, 2.07, 1.98, 2.70, 4.300, 3.5, 4.700, 5.0, 3.6, -1.600, 3.000, 5.100, -0.300, 6.300, 3.300, 4.5, 3.9, 2.600, -1.30, -1.600, 4.4, 4.3, 1.900, 4.500, 4.600, 4.600, 3.000, 2.400, -1.800, 0.3, -8.0, 0.9, 2.200, 4.98, 2.900, -1.200, 2.10, 4.400, 0.700, 2.600, 3.900, 2.100, -1.500, 3.100, 3.400, 4.800, 1.000, -1.0, 0.3, 3.000, -1.8, 2.53, 2.30, 2.3, -0.800, 3.400, 1.600, 6.100, 5.300, 3.800, 3.800, -0.700, 1.900, 3.700, 0.000, -0.2, 2.400, 0.900, 3.800, 2.200, 2.200, 1.9, 0.000, -0.1, 2.100, 3.7, 3.800, 0.400, -1.9, 5.1, -1.3, -0.700, -1.1, -2.5, 0.800, 0.300, -0.200, 1.100, -0.500, 0.400, 2.400, -1.500, -1.70, 1.100, -1.0, -2.6, 1.300, 1.900, 1.200, 1.600, 2.000, 6.0, 7.000, 6.300, 1.600, 2.9, 6.0, 4.2, 2.8, -0.96, 0.600, 6.7, 6.5, -1.24, 2.700, 4.000, 3.100, 2.000, 1.1, 0.300, 4.800, -1.4, -2.4, 1.1, 4.000, 3.200, -1.700, 4.3, 2.000, 0.9, 2.4, 1.7, -0.400, -0.200, 1.900, 0.8, 3.400, 2.900, 5.9, 2.9, 7.600, 3.1, 1.700, -0.77, 6.300, -0.600, -1.600, 4.5, 4.500, 7.0, 1.1, 7.5, 2.900, 1.200, 5.200, 4.000),
+  HDonor = c(1, 2, 4, 2, 2, 3, 13, 0, 1, 3, 4, 3, 3, 3, 1, 3, 3, 4, 0, 2, 2, 0, 1, 2, 0, 1, 1, 3, 4, 2, 2, 2, 2, 2, 2, 0, 1, 1, 0, 2, 2, 2, 2, 1, 2, 3, 3, 2, 1, 1, 1, 11, 1, 1, 1, 2, 3, 6, 4, 1, 0, 2, 0, 3, 3, 2, 0, 1, 0, 0, 1, 0, 2, 2, 0, 2, 1, 1, 2, 1, 4, 2, 2, 2, 2, 2, 1, 1, 2, 1, 1, 1, 3, 1, 4, 3, 2, 2, 2, 1, 1, 1, 2, 1, 1, 6, 7, 2, 2, 3, 0, 0, 0, 0, 0, 3, 0, 12, 3, 0, 2, 1, 2, 2, 2, 2, 2, 0, 2, 5, 1, 1, 1, 3, 1, 3, 2, 2, 0, 0, 4, 3, 0, 3, 0, 0, 0, 2, 2, 2, 1, 1, 1, 1, 2, 3, 4, 1, 0, 2, 4, 2, 0, 2, 3, 11, 1, 3, 4, 3, 4, 3, 2, 3, 3, 2, 3, 1, 7, 9, 3, 18, 19, 6, 1, 1, 2, 3, 2, 1, 2, 4, 3, 4, 5, 4, 0, 0, 0, 0, 4, 5, 5, 5, 5, 8, 4, 3, 1, 3, 2, 0, 4, 8, 1, 1, 3, 3, 3, 2, 3, 3, 1, 1, 1, 4, 3, 0, 2, 1, 4, 2, 3, 3, 2, 2, 2, 3, 5, 2, 1, 0, 1),
+  HAcceptor = c(2, 2, 7, 7, 4, 5, 17, 3, 3, 6, 7, 14, 9, 6, 6, 13, 10, 13, 2, 4, 3, 3, 4, 3, 2, 3, 4, 4, 5, 3, 2, 4, 3, 3, 2, 3, 2, 1, 2, 6, 4, 4, 5, 4, 3, 5, 4, 1, 8, 2, 2, 15, 2, 3, 1, 2, 7, 14, 4, 4, 2, 4, 6, 9, 5, 3, 6, 3, 0, 2, 1, 2, 4, 3, 3, 9, 5, 4, 6, 7, 7, 7, 5, 6, 4, 6, 3, 2, 6, 6, 3, 5, 5, 5, 6, 7, 2, 2, 2, 1, 2, 2, 2, 2, 2, 9, 10, 6, 5, 6, 0, 1, 0, 4, 3, 4, 3, 15, 6, 6, 5, 3, 5, 5, 3, 4, 4, 2, 5, 7, 3, 5, 4, 7, 4, 4, 5, 3, 5, 3, 4, 4, 0, 5, 0, 5, 6, 4, 3, 4, 2, 4, 3, 4, 3, 5, 7, 5, 6, 4, 4, 4, 1, 7, 5, 15, 6, 1, 13, 7, 6, 8, 10, 9, 8, 8, 6, 3, 10, 13, 5, 33, 26, 12, 4, 4, 5, 7, 7, 2, 4, 7, 8, 6, 7, 7, 18, 4, 6, 5, 4, 14, 14, 17, 5, 8, 4, 5, 4, 7, 4, 4, 14, 12, 3, 8, 5, 5, 4, 5, 10, 5, 1, 2, 2, 5, 9, 4, 4, 6, 8, 4, 5, 8, 6, 7, 10, 9, 12, 6, 5, 2, 2),
+  PSA = c(37.3, 49.3, 158.0, 131.0, 50.7, 115.0, 332.0, 58.4, 69.3, 138.0, 173.0, 270.0, 202.0, 138.0, 147.0, 251.0, 201.0, 288.0, 32.7, 78.8, 61.7, 30.2, 87.3, 61.7, 32.7, 28.2, 68.5, 86.8, 104.0, 75.3, 58.2, 52.9, 75.3, 90.3, 41.1, 9.2, 29.1, 20.2, 19.1, 93.2, 78.9, 113.0, 88.7, 58.1, 88.2, 87.7, 84.6, 36.4, 104.0, 32.3, 32.3, 282.6, 23.5, 29.5, 46.3, 58.2, 135.0, 203.0, 72.7, 49.8, 23.6, 70.1, 71.1, 150.0, 112.0, 75.3, 9.2, 66.5, 0.0, 23.6, 20.2, 16.1, 77.8, 90.3, 29.5, 45.2, 38.3, 83.6, 95.9, 110.0, 133.0, 114.0, 95.9, 95.9, 58.6, 95.9, 46.5, 37.3, 93.1, 109.0, 63.6, 72.8, 82.7, 72.8, 112.0, 99.9, 49.3, 58.2, 40.5, 47.4, 37.3, 37.3, 48.9, 37.3, 37.3, 182.0, 202.0, 112.0, 92.5, 94.8, 0.0, 0.0, 0.0, 35.9, 43.1, 64.3, 46.6, 336.0, 102.0, 81.0, 62.2, 55.6, 87.1, 91.7, 49.3, 63.8, 67.6, 20.3, 70.0, 155.0, 54.4, 73.6, 54.4, 129.6, 75.6, 104.0, 73.5, 63.3, 55.8, 55.8, 72.7, 73.6, 0.0, 94.8, 0.0, 72.7, 85.6, 59.6, 68.0, 50.7, 32.3, 81.2, 60.4, 84.6, 58.4, 71.0, 128.0, 110.0, 76.2, 70.4, 64.5, 50.7, 12.5, 139.5, 88.9, 416.0, 63.0, 91.5, 271.0, 117.0, 135.0, 178.0, 99.8, 207.0, 175.0, 162.0, 138.0, 48.2, 188.0, 243.0, 115.0, 706.7, 531.0, 206.0, 55.6, 63.6, 95.9, 131.0, 80.6, 29.5, 66.8, 124.0, 140.0, 145.8, 167.0, 118.0, 258.0, 52.6, 55.4, 55.8, 86.7, 194.0, 180.0, 217.0, 93.0, 145.0, 72.7, 122.0, 46.5, 136.0, 90.6, 61.0, 183.0, 207.0, 49.5, 107.0, 118.0, 92.8, 92.8, 113, 199.0, 94.8, 41.6, 32.3, 32.3, 120.0, 149.0, 42.7, 46.9, 118.1, 191.0, 66.8, 113.0, 136.0, 97.4, 121.0, 114.0, 150.0, 279.0, 121.0, 59.0, 6.5, 29.5),
+  ECCS = c(1.1, 2, 3.1, 3.1, 2, 4, 4, 2, 2, 3.1, 3.2, 3.2, 3.2, 3.1, 3.2, 3.2, 3.1, 3.2, 2, 1.1, 2, 2, 2, 2, 2, 2, 1.1, 4, 3.1, 2, 2, 2, 2, 1.1, 2, 2, 2, 2, 2, 4, 2, 4, 2, 2, 4, 4, 4, 2, 2, 2, 2, 4, 2, 2, 2, 2, 4, 4, 4, 2, 2, 3.1, 2, 1.1, 4, 2, 2, 2, 2, 2, 2, 2, 2, 1.1, 2, 2, 2, 2, 3.2, 3.2, 3.2, 3.2, 3.2, 3.2, 3.1, 3.1, 1.1, 1.1, 1.1, 1.1, 1.1, 2, 1.2, 2, 3.2, 3.2, 2, 4, 2, 2, 1.1, 2, 2, 2, 2, 3.2, 3.2, 3.2, 3.2, 2, 4, 4, 4, 2, 2, 3.1, 2, 4, 2, 2, 2, 2, 3.1, 2, 1.1, 2, 2, 2, 2, 4, 1.1, 1.1, 1.1, 4, 1.1, 3.1, 2, 3.1, 2, 2, 2, 2, 2, 2, 4, 2, 2, 4, 2, 2, 2, 2, 3.1, 2, 4, 2, 2, 2, 2, 2, 4, 2, 2, 4, 4, 4, 4, 4, 3.2, 3.1, 4, 3.1, 3.2, 3.2, 3.2, 3.1, 3.1, 2, 3.2, 3.2, 2, 3.2, 4, 3.2, 2, 1.1, 4, 3.1, 2, 2, 1.1, 3.2, 4, 4, 4, 4, 4, 4, 4, 2, 4, 4, 4, 4, 4, 4, 4, 3.2, 2, 3.1, 2, 2, 4, 4, 2, 2, 4, 3.2, 3.2, 3.1, 3.2, 2, 2, 2, 2, 4, 4, 4, 4, 2, 2, 1.1, 4, 3.1, 2, 2, 3.2, 1.2, 4, 3.2, 2, 2, 2),
+  placental_permeability = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+)
+
+
+
+# Normalize all features except ECCS
+features <- df[, c('molecular_weight', 'logP', 'PSA', 'HDonor', 'HAcceptor')]
+features_normalized <- as.data.frame(scale(features))
+
+# Add ECCS and the target variable to the normalized features
+df_normalized <- cbind(features_normalized, ECCS = df$ECCS, placental_permeability = df$placental_permeability)
+
+# Select specific rows for training
+train_set <- df_normalized[51:220, ]  # Selects rows 51 to 220
+
+# Set aside remaining rows for testing
+test_set <- df_normalized[-c(51:220), ]
+
+# Set the parameters
+stepmax <- 1e+06  # maximum steps, too many leads to overfitting. Increasing this always increases accuracy, but it's a variable more likely to cause overfitting than the others
+learningrate <- 0.003  # learning rate, rate of adjustment to correct via its error (cross entropy in this model)
+threshold <- 0.001  # threshold, stops the model when the threshold of change is 0.001
+
+# Training
+net <- neuralnet(placental_permeability ~ molecular_weight + logP + PSA + HDonor + HAcceptor + ECCS, 
+                 data = train_set,  
+                 hidden = c(70, 30, 65, 75, 20, 40), # 3 layers, 10 nodes in each. 
+                 linear.output = FALSE,  # set to FALSE for a classification problem
+                 stepmax = stepmax,
+                 learningrate = learningrate,
+                 threshold = threshold,
+                 err.fct = "ce",  # use the cross-entropy error function
+                 act.fct = "logistic", # use the logistic activation function because the outcome is binary
+                 rep = 15, # Runs 10 versions of itself, uses the most accurate repetition
+                 algorithm = 'rprop+')  
+
+# Now, let's predict the placental permeability for a drug with the given properties
+# Note that we need to normalize these values in the same way as the training data
+new_drug <- data.frame(molecular_weight = 144, logP = 2.8, PSA = 2, HDonor = 0, HAcceptor = 4) 
+new_drug_normalized <- as.data.frame(scale(new_drug, center = colMeans(features), scale = apply(features, 2, sd)))
+new_drug_normalized$ECCS <- 1.1  # Add ECCS value for new drug
+
+# Make the prediction
+prediction <- compute(net, new_drug_normalized)
+
+# The output is the probability of placental permeability. To get a binary output, you can round the prediction.
+prediction_binary <- round(prediction$net.result)
+
+# Make predictions on the test set
+test_predictions_raw <- compute(net, test_set[, c('molecular_weight', 'logP', 'PSA', 'HDonor', 'HAcceptor', 'ECCS')])
+
+# Since we are dealing with a classification problem, we need to round off the prediction probabilities
+# to get binary classes. We use a threshold of 0.5 to decide between the classes.
+test_predictions <- ifelse(test_predictions_raw$net.result > 0.5, 1, 0)
+
+# Calculate accuracy
+accuracy <- sum(test_predictions == test_set$placental_permeability) / nrow(test_set)
+print(accuracy)
+
+# Convert predicted results to a numeric vector
+predicted_probs <- as.numeric(test_predictions_raw$net.result)
+
+# Calculate AUC-ROC
+roc_obj <- roc(test_set$placental_permeability, predicted_probs)# Print AUC-ROC
+print(auc(roc_obj))
+# Plot ROC curve
+# plot(roc_obj, print.auc = TRUE, print.auc.y = 0.4)
+
+confusionMatrix <- table(test_set$placental_permeability, test_predictions)
+true_positives <- confusionMatrix[2,2]
+false_positives <- confusionMatrix[1,2]
+false_negatives <- confusionMatrix[2,1]
+
+precision <- true_positives / (true_positives + false_positives)
+recall <- true_positives / (true_positives + false_negatives)
+
+# Now calculate the F1 score
+F1 <- 2 * ((precision * recall) / (precision + recall))
+
+# Print the F1 score
+print(paste("F1: ", F1))
+
+
+# Print accuracy
+print(paste("Accuracy: ", accuracy))
+# Convert the predictions and the true values to factors
+test_predictions_factor <- as.factor(test_predictions)
+test_set_factor <- as.factor(test_set$placental_permeability)
+
+# Construct a two-by-two confusion matrix
+cm <- table(test_predictions_factor, test_set_factor)
+
+# Compute components of the confusion matrix
+true_positives <- cm[2, 2]
+false_positives <- cm[2, 1]
+true_negatives <- cm[1, 1]
+false_negatives <- cm[1, 2]
+
+# Compute the Matthews Correlation Coefficient
+MCC <- (true_positives * true_negatives - false_positives * false_negatives) / 
+  sqrt((true_positives + false_positives) * (true_positives + false_negatives) * 
+         (true_negatives + false_positives) * (true_negatives + false_negatives))
+
+# Print MCC
+print(paste("MCC: ", MCC))
+
+
+# Calculate sensitivity (true positive rate)
+sensitivity <- cm[2, 2] / (cm[2, 2] + cm[1, 2])
+print(paste("Sensitivity: ", sensitivity))
+
+# Calculate specificity (true negative rate)
+specificity <- cm[1, 1] / (cm[1, 1] + cm[2, 1])
+print(paste("Specificity: ", specificity))
+
+print(paste("Accuracy: ", accuracy))
+print(paste("F1: ", F1))
+print(paste("MCC: ", MCC))
+print(paste("Specificity: ", specificity))
+print(paste("Sensitivity: ", sensitivity))
+print(paste("AUC-ROC: ", auc(roc_obj)))
+
+# Print the binary prediction
+print(prediction$net.result) # Actual predicted likelihood (0-1, % value) of placental crossing
+print(prediction_binary) # Yes or No for crossing placenta
+
+
